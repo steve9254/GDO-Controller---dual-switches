@@ -1,39 +1,40 @@
-/* Garage Door Controller - Dual Switch v.2.0.4
+/* Garage Door Controller - Dual Switch v.2.0.5
  *
  *  Changelog:
+ *    20221028 v.2.0.5 : changed all logTrace to logDebug
  *    20221027 v.2.0.4 : added flashGarageLight(), errorIndicator output & confirmClosed()
  *    20221026 v.2.0.3 : Connected new GDO control driver
- *    20221025 v.2.0.2 : Removed parent/child app setup
+ *    20221025 v.2.0.2 : Removed parent/child app setup & disconnected zooz driver
  *    20221024 v.2.0.1 : Added support for open & closed contact sensors
  *    20210910 v.2.0.0 : Copied from Zooz Garage Door Opener App v1.2 (Apps Code) by Kevin LaFramboise (@krlaframboise) for Zooz
  *                     : Modified to support seperate Open & Close relays
  */
 
 definition(
-    name        : "Garage Door Controller - Dual Switch (v.2.0.4)",
+    name        : "Garage Door Controller - Dual Switch (v.2.0.5)",
     namespace   : "maddigan",
     author      : "Steve Maddigan",
     description : "Garage door controller with seperate OPEN/CLOSE buttons",
     category    : "Convenience",
     iconUrl     : "",
     iconX2Url   : "",
-    importUrl   : ""
+    importUrl   : "https://raw.githubusercontent.com/steve9254/GDO-Controller---dual-switches/main/GDO_Controller-Dual_Switch_app.groovy"
 )
 
 preferences {
-    page(name: "mainPage", title: "<h2>Garage Door Controller - Dual Switch (v.2.0.4)</h2>", install: true, uninstall: true) {
+    page(name: "mainPage", title: "<h2>Garage Door Controller - Dual Switch (v.2.0.5)</h2>", install: true, uninstall: true) {
 	    section("<b>Controls</b>") {
 
             input name: "garageControl",       type: "capability.garageDoorControl",      title: "Garage Door Control",
-		        description: "Use a Virtual Garage Door Control device",               multiple: false, required: true
+		        description: "Use a Virtual Garage Door Control device",                   multiple: false, required: true
 
             input name: "closeRelaySwitch",    type: "capability.switch",                 title:"Close Relay Switch",
-		        description: "Physical relay switch that closes garage door",          multiple: false, required: true
+		        description: "Physical relay switch that closes garage door",             multiple: false, required: true
 
             input name: "openRelaySwitch",     type: "capability.switch",                 title: "Open Relay Switch",
-		        description: "Physical relay switch that opens your garage door",      multiple: false, required: true
+		        description: "Physical relay switch that opens your garage door",          multiple: false, required: true
 
-            input name: "lightRelaySwitch",    type: "capability.switch", 		          title: "Light Relay Switch",
+            input name: "lightRelaySwitch",    type: "capability.switch", 		            title: "Light Relay Switch",
                 description: "Relay switch that toggles the garage door light",        multiple: false, required: false
         }
 
@@ -88,7 +89,7 @@ def setupSubscriptions() {
 }
 
 def GarageControlHandler(evt) {
-    logTrace "GarageControlhandler() ...${evt.name} ${evt.value}"
+    logDebug "GarageControlhandler() ...${evt.name} ${evt.value}"
 
     if ( evt.value == "closing" ) {
         String ClosedStatus = closedSensor?.currentValue("contact")
@@ -103,17 +104,17 @@ def GarageControlHandler(evt) {
 }
 
 def activateCloseRelaySwitch() {
-    logDebug "Activating Close Relay Switch ..."
+    logDebug "activateCloseRelaySwitch() ..."
     closeRelaySwitch?.on()
 }
 
 def activateOpenRelaySwitch() {
-    logDebug "Activating Open Relay Switch ..."
+    logDebug "activateOpenRelaySwitch() ..."
     openRelaySwitch?.on()
 }
 
 def closeRelaySwitchHandler(evt) {
-    logDebug "Relay Close Switch Detected ..."
+    logDebug "closeRelaySwitchHandler() ..."
     String closedStatus = closedSensor?.currentValue("contact")
 
     if ( closedStatus != "closed" ) {
@@ -124,7 +125,7 @@ def closeRelaySwitchHandler(evt) {
 }
 
 def openRelaySwitchHandler(evt) {
-    logDebug "Relay Open Switch Detected ..."
+    logDebug "openRelaySwitchHandler() ..."
     unschedule(confirmClosed)
     String openedStatus = openedSensor?.currentValue("contact")
 
@@ -136,7 +137,7 @@ def openRelaySwitchHandler(evt) {
 }
 
 def inProgressHandler(evt) {
-    logTrace "inProgressHandler() ..."
+    logDebug "inProgressHandler() ..."
     String doorStatus = garageControl?.currentValue("door")
     String movingStatus = movingSensor?.currentValue("acceleration")
     String openedStatus = openedSensor?.currentValue("contact")
@@ -160,7 +161,7 @@ def inProgressHandler(evt) {
 }
 
 def updateDoorStatus() {
-    logTrace "updateDoorStatus() ..."
+    logDebug "updateDoorStatus() ..."
     String movingStatus = movingSensor?.currentValue("acceleration")
     String closedStatus = closedSensor?.currentValue("contact")
 
@@ -174,12 +175,12 @@ def updateDoorStatus() {
 }
 
 def sendDoorEvent(value) {
-    logTrace "sendDoorEvent() ..."
+    logDebug "sendDoorEvent() ..."
     garageControl.sendEvent(name: "door", value: value)
 }
 
 def confirmClosed() {
-    logTrace "confirmClosed() ..."
+    logDebug "confirmClosed() ..."
     if ( closedSensor?.currentValue("contact") != "closed" ) {
         errorIndicator?.on()
     }
