@@ -1,6 +1,7 @@
-/* Garage Door Controller - Dual Switch v.2.0.5
+/* Garage Door Controller - Dual Switch v.2.0.6
  *
  *  Changelog:
+ *    20230519 v.2.0.6 : added 30sec status check after inProgressHandler sets inProgressIndicator?.on()
  *    20221028 v.2.0.5 : changed all logTrace to logDebug
  *    20221027 v.2.0.4 : added flashGarageLight(), errorIndicator output & confirmClosed()
  *    20221026 v.2.0.3 : Connected new GDO control driver
@@ -11,7 +12,7 @@
  */
 
 definition(
-    name        : "Garage Door Controller - Dual Switch (v.2.0.5)",
+    name        : "Garage Door Controller - Dual Switch (v.2.0.6)",
     namespace   : "maddigan",
     author      : "Steve Maddigan",
     description : "Garage door controller with seperate OPEN/CLOSE buttons",
@@ -149,9 +150,12 @@ def inProgressHandler(evt) {
         errorIndicator?.off()
     }
 
+    unschedule ( inProgressHandler )
+        
     if (( movingStatus == "active" ) && ( closedStatus == "open" ) && ( openedStatus == "open" )) {
         logDebug "Setting inProgressIndicator"
         inProgressIndicator?.on()
+        runIn ( 30 , inProgressHandler )
     } else {
         logDebug "Clearing inProgressIndicator"
         inProgressIndicator?.off()
