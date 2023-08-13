@@ -26,7 +26,7 @@ definition(
 )
 
 preferences {
-    page(name: "mainPage", title: "<h2>Garage Door Controller - Dual Switch (v.2.0.5)</h2>", install: true, uninstall: true) {
+    page(name: "mainPage", title: "<h2>Garage Door Controller - Dual Switch (v.2.0.7)</h2>", install: true, uninstall: true) {
 	    section("<b>Controls</b>") {
 
             input name: "garageControl",       type: "capability.garageDoorControl",      title: "Garage Door Control",
