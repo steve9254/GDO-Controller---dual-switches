@@ -1,6 +1,9 @@
-/* Garage Door Controller - Dual Switch v.2.0.6
+/* Garage Door Controller - Dual Switch v.2.0.7
  *
  *  Changelog:
+ *    20230813 v.2.0.7 : limited recheck of status to once incase inprogress sensor does not refresh
+ *                     : adjusted updated(), initialize(), and logging
+ *                     : removed movingStatus condition from updateDoorStatus()
  *    20230519 v.2.0.6 : added 30sec status check after inProgressHandler sets inProgressIndicator?.on()
  *    20221028 v.2.0.5 : changed all logTrace to logDebug
  *    20221027 v.2.0.4 : added flashGarageLight(), errorIndicator output & confirmClosed()
@@ -12,7 +15,7 @@
  */
 
 definition(
-    name        : "Garage Door Controller - Dual Switch (v.2.0.6)",
+    name        : "Garage Door Controller - Dual Switch (v.2.0.7)",
     namespace   : "maddigan",
     author      : "Steve Maddigan",
     description : "Garage door controller with seperate OPEN/CLOSE buttons",
@@ -64,20 +67,28 @@ preferences {
 }
 
 def installed() {
+    logTrace "Installed() ..."
     initialize()
 }
 
-def updated() {
-    log.warn "Updated() ..."
-
+def unistalled() {
+    logTrace "Uninstalled() ..."
     unsubscribe()
     unschedule()
+}
+
+def updated() {
+    logTrace "Updated() ..."
     initialize()
 }
 
 def initialize() {
-    log.warn "Initialized() ..."
+    logTrace "Initialized() ..."
+    unsubscribe()
+    unschedule()
     setupSubscriptions()
+    state.GDOdeferredUpdate = "false"
+    inProgressHandler()
 }
 
 def setupSubscriptions() {
@@ -145,23 +156,24 @@ def inProgressHandler(evt) {
     String closedStatus = closedSensor?.currentValue("contact")
     logDebug "movingStatus=${movingStatus}, closedSensor=${closedStatus}, openSensor=${openedStatus}"
 
+    unschedule ( inProgressHandler )
+    
     if ( errorIndicator?.currentValue("switch") == "on" ) {
         logDebug "Clearing errorIndicator"
         errorIndicator?.off()
     }
 
-    unschedule ( inProgressHandler )
-        
-    if (( movingStatus == "active" ) && ( closedStatus == "open" ) && ( openedStatus == "open" )) {
+    if ( ( movingStatus == "active" ) && ( closedStatus == "open" ) && ( openedStatus == "open" ) && ( state.GDOdeferredUpdate == "false" ) ) {
         logDebug "Setting inProgressIndicator"
         inProgressIndicator?.on()
+        state.GDOdeferredUpdate = "true"
         runIn ( 30 , inProgressHandler )
     } else {
         logDebug "Clearing inProgressIndicator"
         inProgressIndicator?.off()
+        state.GDOdeferredUpdate = "false"
+        updateDoorStatus()
     }
-
-    updateDoorStatus()
 }
 
 def updateDoorStatus() {
@@ -169,13 +181,16 @@ def updateDoorStatus() {
     String movingStatus = movingSensor?.currentValue("acceleration")
     String closedStatus = closedSensor?.currentValue("contact")
 
-    if ( movingStatus == "inactive" ) {
+    //if ( movingStatus == "inactive" ) {
         if ( closedStatus == "closed" ) {
-        	sendDoorEvent("closed")
+            unschedule ( confirmClosed )
+        	logDebug "updateDoorStatus() = CLOSED"
+            sendDoorEvent("closed")
        	} else {
+        	logDebug "updateDoorStatus() = OPEN"
             sendDoorEvent("open")
         }
-    }
+    //}
 }
 
 def sendDoorEvent(value) {
@@ -203,10 +218,10 @@ def flashGarageLight() {
 
 def logDebug(String msg) {
     if (debugLogging != false) {
-        log.debug "$msg"
+        log.debug "GDO Dual Switch - $msg"
     }
 }
 
 def logTrace(String msg) {
-     log.trace "$msg"
+     log.trace "GDO Dual Switch - $msg"
 }
