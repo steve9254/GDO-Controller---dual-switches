@@ -1,6 +1,7 @@
-/* Garage Door Controller - Dual Switch v.2.0.7
+/* Garage Door Controller - Dual Switch v.2.0.8
  *
  *  Changelog:
+ *    20230826 v.2.0.8 : split inProgressHandler & sensorCheckHandler ro add a 1 sec delay from activity to checking sensors
  *    20230813 v.2.0.7 : limited recheck of status to once incase inprogress sensor does not refresh
  *                     : adjusted updated(), initialize(), and logging
  *                     : removed movingStatus condition from updateDoorStatus()
@@ -15,7 +16,7 @@
  */
 
 definition(
-    name        : "Garage Door Controller - Dual Switch (v.2.0.7)",
+    name        : "Garage Door Controller - Dual Switch (v.2.0.8)",
     namespace   : "maddigan",
     author      : "Steve Maddigan",
     description : "Garage door controller with seperate OPEN/CLOSE buttons",
@@ -26,7 +27,7 @@ definition(
 )
 
 preferences {
-    page(name: "mainPage", title: "<h2>Garage Door Controller - Dual Switch (v.2.0.7)</h2>", install: true, uninstall: true) {
+    page(name: "mainPage", title: "<h2>Garage Door Controller - Dual Switch (v.2.0.8)</h2>", install: true, uninstall: true) {
 	    section("<b>Controls</b>") {
 
             input name: "garageControl",       type: "capability.garageDoorControl",      title: "Garage Door Control",
@@ -96,8 +97,8 @@ def setupSubscriptions() {
     subscribe(closeRelaySwitch, "switch.on",      closeRelaySwitchHandler)
     subscribe(openRelaySwitch,  "switch.on",      openRelaySwitchHandler)
     subscribe(movingSensor,     "acceleration",   inProgressHandler)
-    subscribe(closedSensor,     "contact.closed", inProgressHandler)
-    subscribe(openedSensor,     "contact.closed", inProgressHandler)
+    subscribe(closedSensor,     "contact.closed", sensorCheckHandler)
+    subscribe(openedSensor,     "contact.closed", sensorCheckHandler)
 }
 
 def GarageControlHandler(evt) {
@@ -150,13 +151,18 @@ def openRelaySwitchHandler(evt) {
 
 def inProgressHandler(evt) {
     logDebug "inProgressHandler() ..."
+    runIn ( 1 , sensorCheckHandler )
+}
+
+def sensorCheckHandler(evt) {
+    logDebug "sensorCheckHandler() ..."
     String doorStatus = garageControl?.currentValue("door")
     String movingStatus = movingSensor?.currentValue("acceleration")
     String openedStatus = openedSensor?.currentValue("contact")
     String closedStatus = closedSensor?.currentValue("contact")
     logDebug "movingStatus=${movingStatus}, closedSensor=${closedStatus}, openSensor=${openedStatus}"
 
-    unschedule ( inProgressHandler )
+    unschedule ( sensorCheckHandler )
     
     if ( errorIndicator?.currentValue("switch") == "on" ) {
         logDebug "Clearing errorIndicator"
@@ -167,7 +173,7 @@ def inProgressHandler(evt) {
         logDebug "Setting inProgressIndicator"
         inProgressIndicator?.on()
         state.GDOdeferredUpdate = "true"
-        runIn ( 30 , inProgressHandler )
+        runIn ( 30 , sensorCheckHandler )
     } else {
         logDebug "Clearing inProgressIndicator"
         inProgressIndicator?.off()
