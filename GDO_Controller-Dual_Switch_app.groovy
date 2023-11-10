@@ -1,6 +1,7 @@
 /* Garage Door Controller - Dual Switch v.2.0.8
  *
  *  Changelog:
+ *    20231110 v.2.0.9 : fixed bug that prevented disabiling debug logging
  *    20230826 v.2.0.8 : split inProgressHandler & sensorCheckHandler ro add a 1 sec delay from activity to checking sensors
  *    20230813 v.2.0.7 : limited recheck of status to once incase inprogress sensor does not refresh
  *                     : adjusted updated(), initialize(), and logging
@@ -62,7 +63,7 @@ preferences {
         }
 
         section{
-            input name: "enableLogging", type: "bool", title: "Enable Debug Logging?", defaultValue: false, required: true
+            input name: "debugLogging", type: "bool", title: "Enable Debug Logging?", defaultValue: false, required: true
         }
     }
 }
