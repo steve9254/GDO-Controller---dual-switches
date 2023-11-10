@@ -1,4 +1,4 @@
-/* Garage Door Controller - Dual Switch v.2.0.8
+/* Garage Door Controller - Dual Switch v.2.0.9
  *
  *  Changelog:
  *    20231110 v.2.0.9 : fixed bug that prevented disabiling debug logging
@@ -17,7 +17,7 @@
  */
 
 definition(
-    name        : "Garage Door Controller - Dual Switch (v.2.0.8)",
+    name        : "Garage Door Controller - Dual Switch (v.2.0.9)",
     namespace   : "maddigan",
     author      : "Steve Maddigan",
     description : "Garage door controller with seperate OPEN/CLOSE buttons",
@@ -28,7 +28,7 @@ definition(
 )
 
 preferences {
-    page(name: "mainPage", title: "<h2>Garage Door Controller - Dual Switch (v.2.0.8)</h2>", install: true, uninstall: true) {
+    page(name: "mainPage", title: "<h2>Garage Door Controller - Dual Switch (v.2.0.9)</h2>", install: true, uninstall: true) {
 	    section("<b>Controls</b>") {
 
             input name: "garageControl",       type: "capability.garageDoorControl",      title: "Garage Door Control",
